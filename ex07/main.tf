@@ -38,3 +38,12 @@ module "ec2_instance" {
   ebs_volume_type        = "gp2"
   availability_zone      = "us-east-1a"
 }
+
+resource "aws_ebs_volume" "ebs_volume" {
+  availability_zone = "us-east-1a"
+  size              = "14"
+  type              = "gp3"
+  tags = {
+    Name = "10gb-ebs-volume"
+  }
+}
