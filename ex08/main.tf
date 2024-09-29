@@ -11,7 +11,7 @@ module "network1" {
   enable_dns_hostnames = true
 }
 
-/*module "ec2_instance" {
+module "ec2_instance" {
   source = "../module/ec2"
 
   instance_name          = "web-server"
@@ -21,6 +21,7 @@ module "network1" {
   subnet_id              = module.network1.subnet_ids[0]
   vpc_id                 = module.network1.vpc_id
   security_group_name = "wb-sg01"
+  
   
   ingress_rules = {
     ssh  = ["22", "22", "tcp", "0.0.0.0/0"]
@@ -39,11 +40,26 @@ module "network1" {
   availability_zone      = "us-east-1a"
 }
 
-resource "aws_ebs_volume" "ebs_volume" {
-  availability_zone = "us-east-1a"
-  size              = "14"
-  type              = "gp3"
-  tags = {
-    Name = "10gb-ebs-volume"
+
+resource "null_resource" "stop-httpd" {
+  connection {
+    type = "ssh"
+    user = "ec2-user"
+    host = module.ec2_instance.public_ip
+    private_key = file("~/Downloads/skv-key1.pem")
   }
-}*/
+
+  provisioner "remote-exec" {
+    inline = [
+      "sleep 60",
+      "sudo systemctl stop httpd",
+
+      "echo -e 'n\np\n1\n\n\nw' | sudo fdisk /dev/xvdg",
+      "sudo mkfs.ext4 /dev/nvme1n1p1",
+      "sudo mkdir -p /mnt/data",
+      "sudo mount /dev/nvme1n1p1 /mnt/data",
+      "sudo chown ec2-user:ec2-user /mnt/data",
+      "sudo echo 'line in file1' >> /mnt/data/file1"
+    ]
+  }
+}
